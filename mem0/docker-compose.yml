@@ -61,3 +61,4 @@ networks:
   mem0-net:
     name: ${DOCKER_NETWORK:-mission-control}
     driver: bridge
+    external: true
