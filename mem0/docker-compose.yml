@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: ankane/pgvector:v0.5.1
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mem0}
+      POSTGRES_USER: ${POSTGRES_USER:-mem0}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?error}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mem0}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mem0-net
+
+  mem0:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    ports:
+      - "8888:8000"
+    networks:
+      - mem0-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/openapi.json"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  mem0-dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - mem0
+    environment:
+      NEXT_PUBLIC_API_URL: ${MEM0_API_URL:-http://localhost:8888}
+    ports:
+      - "3000:3000"
+    networks:
+      - mem0-net
+
+volumes:
+  postgres_data:
+
+networks:
+  mem0-net:
+    name: ${DOCKER_NETWORK:-mission-control}
+    driver: bridge
