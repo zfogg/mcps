@@ -8,6 +8,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?error}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    expose:
+      - "5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mem0}"]
       interval: 5s
@@ -28,8 +30,8 @@ services:
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
-    ports:
-      - "8888:8000"
+    expose:
+      - "8000"
     networks:
       - mem0-net
     healthcheck:
@@ -37,7 +39,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-      start_period: 10s
 
   mem0-dashboard:
     build:
@@ -48,8 +49,8 @@ services:
       - mem0
     environment:
       NEXT_PUBLIC_API_URL: ${MEM0_API_URL:-http://localhost:8888}
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     networks:
       - mem0-net
 
